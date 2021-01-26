@@ -34,8 +34,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Implements a trash for File that cannot be immediately delete for some
- * errors.
+ * Implements a trash for Files that cannot be immediately deleted for some
+ * errors. Implements a mechanism to retry file deletion.
  *
  * @author luca
  *
