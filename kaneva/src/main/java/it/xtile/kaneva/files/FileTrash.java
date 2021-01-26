@@ -33,6 +33,13 @@ import java.util.function.Predicate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * Implements a trash for File that cannot be immediately delete for some
+ * errors.
+ *
+ * @author luca
+ *
+ */
 public class FileTrash {
 
 	private static final Logger log = LogManager.getLogger(FileTrash.class);
