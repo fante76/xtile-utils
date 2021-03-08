@@ -54,12 +54,12 @@ public class FileTrash {
 	private int emptyTreshold;
 
 	/**
-	 * Max number of failed deletion on a file. Over that, file will be removed from the trash queue
+	 * Max number of failed deletions on a file. Over that, file will be removed from the trash queue
 	 */
 	private int maxMissTimes;
 
 	/**
-	 * How mutch long a file can lay in the queue, before it is removed
+	 * How much long a file can lay in the queue, before it is removed
 	 */
 	private Duration maxAge;
 
@@ -79,13 +79,11 @@ public class FileTrash {
 	}
 
 	/**
-	 * Cancella subito il file indicato. In caso di fallimento, accoda per una
-	 * cancellazione futura.
+	 * Immediately deletes the given file. If failed, file will be queued for a future deletion
 	 *
-	 * Controlla se il file è già inserito in lista
+	 * It will check for file already queued
 	 *
-	 * @param file percorso al file da cancellare. Se è una cartella deve essere
-	 *             vuota
+	 * @param file path to the file to be deleted. It it refers a directory, it must be already empty
 	 */
 	public void delete(Path file) {
 		final Optional<FileEntry> fe = trashedFiles.stream().filter(f -> f.getPathToFile().equals(file)).findFirst();
@@ -93,7 +91,7 @@ public class FileTrash {
 	}
 
 	/**
-	 * Recursively delete a directory
+	 * Recursively deletes a directory
 	 *
 	 * @param directory
 	 */
@@ -102,9 +100,9 @@ public class FileTrash {
 	}
 
 	/**
-	 * Try to delete a file from the filesystem. If fail, the file will be queued on
-	 * the trash for next run. Files already in queue are checked for expiration: if
-	 * expired they will be ejected from the queue and logged for this.
+	 * It tries to delete a file from the filesystem. If it fails, the file will be queued on
+	 * the trash for next time. Files already queued are checked for expiration: if
+	 * expired they will be ejected from the queue and logs will happens for this.
 	 *
 	 * @param fe          Reference to the file
 	 * @param fileTrashed True if file is already in queue, false otherwise
@@ -135,7 +133,7 @@ public class FileTrash {
 	}
 
 	/**
-	 * Accoda il file per la cancellazione al prossimo tentativo
+	 * Queues file for next deletion
 	 *
 	 * @param file
 	 */
@@ -151,7 +149,7 @@ public class FileTrash {
 	 * Run for delete! Try to remove from filesystem all queued file. For does who failed
 	 * a missTimes will be added; other will stay in the queue.
 	 *
-	 * @return Il numero di file effettivamente cancellati
+	 * @return size of physically deleted files
 	 */
 	public int empty() {
 		final AtomicInteger deletedSize = new AtomicInteger(0);
@@ -185,22 +183,21 @@ public class FileTrash {
 	}
 
 	/**
-	 * @return attuale dimensione del cestino
+	 * @return current trash size
 	 */
 	public int size() {
 		return trashedFiles.size();
 	}
 
 	/**
-	 * @return Soglia alla quale scatta lo svuotamento
+	 * @return threshold form empty action
 	 */
 	public int getEmptyTreshold() {
 		return emptyTreshold;
 	}
 
 	/**
-	 * @param emptyTreshold Soglia di svuotamento intesa come numero di file nel
-	 *                      cestino
+	 * @param emptyTreshold threshold for empty action, compared with number of files in queue
 	 */
 	public void setEmptyTreshold(int emptyTreshold) {
 		this.emptyTreshold = emptyTreshold;
@@ -234,8 +231,7 @@ public class FileTrash {
 
 	/**
 	 *
-	 * @param emptyTreshold Soglia di svuotamento intesa come numero di file nel
-	 *                      cestino
+	 * @param emptyTreshold threshold for empty action, compared with number of files in queue
 	 * @return
 	 */
 	public FileTrash withEmptyTreshold(int emptyTreshold) {
