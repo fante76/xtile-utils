@@ -18,6 +18,9 @@
  */
 package it.xtile.kaneva.files;
 
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -36,8 +39,17 @@ import org.apache.logging.log4j.Logger;
 /**
  * Implements a trash for Files that cannot be immediately deleted for some
  * errors. Implements a mechanism to retry file deletion.
+ * 
+ * The main usage is simply to ask FileTrash to delete a file or a directory
+ * (also recursively). It tries to immediately delete the object and, if failed,
+ * the deletion is queued for next time. The caller does not get catch by the
+ * deletion problem and can continue its work.
+ * 
+ * You can even explicitly queued a file for future deletion.
  *
  * @author luca
+ * 
+ * TODO implements an emptyAsync that remove file in new thread and free the caller
  *
  */
 public class FileTrash {
@@ -54,7 +66,8 @@ public class FileTrash {
 	private int emptyTreshold;
 
 	/**
-	 * Max number of failed deletions on a file. Over that, file will be removed from the trash queue
+	 * Max number of failed deletions on a file. Over that, file will be removed
+	 * from the trash queue
 	 */
 	private int maxMissTimes;
 
@@ -79,11 +92,15 @@ public class FileTrash {
 	}
 
 	/**
-	 * Immediately deletes the given file. If failed, file will be queued for a future deletion
+	 * Immediately deletes the given file. If failed, file will be queued for a
+	 * future deletion.
 	 *
-	 * It will check for file already queued
+	 * It will check for file already queued.
+	 * 
+	 * Not empty directory will fail. You should use {@link #deleteTree(Path)}
 	 *
-	 * @param file path to the file to be deleted. It it refers a directory, it must be already empty
+	 * @param file path to the file to be deleted. It it refers a directory, it must
+	 *             be already empty
 	 */
 	public void delete(Path file) {
 		final Optional<FileEntry> fe = trashedFiles.stream().filter(f -> f.getPathToFile().equals(file)).findFirst();
@@ -94,15 +111,29 @@ public class FileTrash {
 	 * Recursively deletes a directory
 	 *
 	 * @param directory
+	 * @throws IOException
 	 */
-	public void deletedTree(Path directory) {
-		// TODO
+	public void deleteTree(Path directory) throws IOException {
+		if (Files.isDirectory(directory)) {
+			try (DirectoryStream<Path> dir = Files.newDirectoryStream(directory)) {
+				for (Path path : dir) {
+					if (Files.isDirectory(path)) {
+						deleteTree(path);
+					} else {
+						delete(path);
+					}
+				}
+			}
+			// delete, this should be empty
+			delete(directory);
+		}
 	}
 
 	/**
-	 * It tries to delete a file from the filesystem. If it fails, the file will be queued on
-	 * the trash for next time. Files already queued are checked for expiration: if
-	 * expired they will be ejected from the queue and logs will happens for this.
+	 * It tries to delete a file from the filesystem. If it fails, the file will be
+	 * queued on the trash for next time. Files already queued are checked for
+	 * expiration: if expired they will be ejected from the queue and logs will
+	 * happens for this.
 	 *
 	 * @param fe          Reference to the file
 	 * @param fileTrashed True if file is already in queue, false otherwise
@@ -146,8 +177,8 @@ public class FileTrash {
 	}
 
 	/**
-	 * Run for delete! Try to remove from filesystem all queued file. For does who failed
-	 * a missTimes will be added; other will stay in the queue.
+	 * Run for delete! Try to remove from filesystem all queued file. For does who
+	 * failed a missTimes will be added; other will stay in the queue.
 	 *
 	 * @return size of physically deleted files
 	 */
@@ -197,7 +228,8 @@ public class FileTrash {
 	}
 
 	/**
-	 * @param emptyTreshold threshold for empty action, compared with number of files in queue
+	 * @param emptyTreshold threshold for empty action, compared with number of
+	 *                      files in queue
 	 */
 	public void setEmptyTreshold(int emptyTreshold) {
 		this.emptyTreshold = emptyTreshold;
@@ -231,7 +263,8 @@ public class FileTrash {
 
 	/**
 	 *
-	 * @param emptyTreshold threshold for empty action, compared with number of files in queue
+	 * @param emptyTreshold threshold for empty action, compared with number of
+	 *                      files in queue
 	 * @return
 	 */
 	public FileTrash withEmptyTreshold(int emptyTreshold) {
